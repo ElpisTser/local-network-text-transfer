@@ -1,0 +1,46 @@
+# Node modules
+node_modules/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Optional build output (if you later transpile or bundle)
+dist/
+build/
+
+# VSCode settings (optional)
+.vscode/
+
+# OS junk
+*.swp
+*.swo
+
+# QR code images or temp files (if you later generate and save them)
+*.png
+*.jpg
+*.jpeg
+*.svg
+temp/
+
+# Expo (if you someday generate configs here)
+.expo/
+.expo-shared/
