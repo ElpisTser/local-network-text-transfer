@@ -1,9 +1,9 @@
-// server.js
 import express from 'express';
 import { getLocalIPAddress } from './utils/getLocalIP.js';
+import 'dotenv/config';
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 8080;
 
 app.use(express.json());
 
@@ -14,6 +14,7 @@ app.get('/', (req, res) => {
 app.get('/ping', (req, res) => {
     res.status(200).json({ status: 'ok', message: 'Server is available' });
 });
+
 
 app.post('/log', (req, res) => {
     const { text } = req.body;
