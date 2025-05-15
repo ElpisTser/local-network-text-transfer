@@ -17,9 +17,11 @@ A project consisting of a mobile app (built with Expo) and a Node.js server. The
 ## 📱 Mobile App
 
 - Built with **React Native** using **Expo**
-- Lets the user input text and send it to the server
+- Includes a **connection screen**:
+  - Lets the user input the server address manually
+  - Sends a `GET /ping` request to verify connectivity
+  - Displays success or error messages based on the response
 - Uses **axios** to send requests
-- Current IP/port is hardcoded using a local `config.js` file
 
 ---
 
@@ -53,6 +55,6 @@ npm run start
 ```
 
 - Scan the QR code with **Expo Go** on your physical device.
-- The app should load and allow you to sent text to the server. 
+- The app should load and display a connection screen where you can enter the server address and test connectivity.
 
 
