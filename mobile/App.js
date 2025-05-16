@@ -1,6 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ConnectionScreen from './screens/ConnectionScreen';
+import TextTransferScreen from './screens/TextTransferScreen';
 
 export default function App() {
-  return <ConnectionScreen />;
+  const [serverAddress, setServerAddress] = useState('');
+  const [connectionStatus, setConnectionStatus] = useState('idle'); // 'idle' | 'success' | 'fail'
+
+  return (
+    <>
+      {connectionStatus === 'success' ? (
+        <TextTransferScreen serverAddress={serverAddress} />
+      ) : (
+        <ConnectionScreen
+          setServerAddress={setServerAddress}
+          setConnectionStatus={setConnectionStatus}
+        />
+      )}
+    </>
+  );
 }

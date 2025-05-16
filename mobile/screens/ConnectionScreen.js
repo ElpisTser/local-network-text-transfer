@@ -2,37 +2,39 @@ import React, { useState } from 'react';
 import { View, TextInput, Button, Text, StyleSheet, Alert } from 'react-native';
 import axios from 'axios';
 
-export default function ConnectionScreen() {
+export default function ConnectionScreen({ setServerAddress, setConnectionStatus }) {
   const [address, setAddress] = useState('');
   const [status, setStatus] = useState(null);
 
-const handlePing = async () => {
-  try {
-    let url = address.startsWith('http') ? address : `http://${address}`;
-    const response = await axios.get(`${url}/ping`);
-    
-    if (response.status === 200) {
-      setStatus('success');
-      Alert.alert('Connection Successful', 'Server responded to ping!');
-    } else {
-      setStatus('fail');
-      Alert.alert('Unexpected Response', `Status: ${response.status}`);
-    }
-  } catch (error) {
-    if (error.response) {
-      Alert.alert(
-        'Connection Failed',
-        `Server responded with status ${error.response.status}`
-      );
-    } else if (error.request) {
-      Alert.alert('Connection Failed', 'No response from server.');
-    } else {
-      Alert.alert('Connection Failed', 'Could not send request.');
-    }
+  const handlePing = async () => {
+    try {
+      let url = address.startsWith('http') ? address : `http://${address}`;
+      const response = await axios.get(`${url}/ping`);
 
-    setStatus('fail');
-  }
-};
+      if (response.status === 200) {
+        setStatus('success');
+        setServerAddress(url);
+        setConnectionStatus('success');
+        Alert.alert('Connection Successful', 'Server responded to ping!');
+      } else {
+        setStatus('fail');
+        Alert.alert('Unexpected Response', `Status: ${response.status}`);
+      }
+    } catch (error) {
+      setStatus('fail');
+
+      if (error.response) {
+        Alert.alert(
+          'Connection Failed',
+          `Server responded with status ${error.response.status}`
+        );
+      } else if (error.request) {
+        Alert.alert('Connection Failed', 'No response from server.');
+      } else {
+        Alert.alert('Connection Failed', 'Could not send request.');
+      }
+    }
+  };
 
   return (
     <View style={styles.container}>
