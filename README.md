@@ -10,6 +10,7 @@ A project consisting of a mobile app (built with Expo) and a Node.js server. The
 - Provides two endpoints:
   - `GET /ping`: check server availability
   - `POST /log`: receive and log text sent from the mobile app
+  - `GET /qr`: returns a QR code containing the server URL for easier mobile connection
 - On startup, logs the local IP address and port the server is running on
 
 ---
