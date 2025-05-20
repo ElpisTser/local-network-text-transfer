@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
 import { View, TextInput, Button, Text, StyleSheet, Alert } from 'react-native';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import axios from 'axios';
 
 export default function ConnectionScreen({ setServerAddress, setConnectionStatus }) {
   const [address, setAddress] = useState('');
   const [status, setStatus] = useState(null);
+  const [scannerVisible, setScannerVisible] = useState(false);
+  const [scannedData, setScannedData] = useState(null);
+  const [hasScanned, setHasScanned] = useState(false);
+  const [permission, requestPermission] = useCameraPermissions();
 
   const handlePing = async () => {
     try {
@@ -36,25 +41,78 @@ export default function ConnectionScreen({ setServerAddress, setConnectionStatus
     }
   };
 
+  const handleScan = ({ data }) => {
+    if (hasScanned) return;
+    setHasScanned(true);
+    setScannerVisible(false);
+    setScannedData(data);
+    setAddress(data);
+  }
+
+const handleStartScan = async () => {
+  setHasScanned(false);
+  if (permission?.granted) {
+    setScannerVisible(true);
+  } else {
+    const { granted, canAskAgain } = await requestPermission();
+    if (granted) {
+      setScannerVisible(true);
+    } else {
+      Alert.alert(
+        'Camera Permission Denied',
+        canAskAgain
+          ? 'Camera access is needed to scan QR codes. Please allow it in the prompt.'
+          : 'Camera access is permanently denied. You can enable it in your device settings.'
+      );
+    }
+  }
+};
+
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Enter server URL (e.g. http://192.168.1.42:3000)</Text>
-      <TextInput
-        style={styles.input}
-        value={address}
-        onChangeText={setAddress}
-        placeholder="Server address"
-        autoCapitalize="none"
-      />
-      <Button title="Connect to Server" onPress={handlePing} />
-      {status && (
-        <Text style={{ marginTop: 10, color: status === 'success' ? 'green' : 'red' }}>
-          {status === 'success' ? 'Connected!' : 'Connection failed'}
-        </Text>
+      {scannerVisible ? (
+        <View style={StyleSheet.absoluteFill}>
+          <CameraView
+            style={StyleSheet.absoluteFill}
+            zoom={0.3}
+            barcodeScannerSettings={{
+              barcodeTypes: ['qr'],
+            }}
+            onBarcodeScanned={handleScan}
+          />
+          <View style={styles.cancelOverlay}>
+            <Button title='Cancel Scan' onPress={() => setScannerVisible(false)}/>
+          </View>
+        </View>
+      ) : (
+        <>
+          <Text style={styles.label}>
+            Enter server URL or scan QR code
+          </Text>
+          <TextInput
+            style={styles.input}
+            value={address}
+            onChangeText={setAddress}
+            placeholder='Server address'
+            autoCapitalize='none'
+          />
+          <Button title='Connect to server' onPress={handlePing} />
+          <View style={{ marginTop: 10 }}>
+            <Button title='Scan QR code' onPress={handleStartScan} />  
+          </View> 
+          {scannedData && (
+            <Text style={styles.scanResult}>Scanned: {scannedData}</Text>
+          )}
+          {status && (
+            <Text style={{ marginTop: 10, color: status === 'success' ? 'green' : 'red' }}>
+              {status === 'success' ? 'Connected' : 'Connection Failed'}
+            </Text>
+          )}
+        </>
       )}
     </View>
   );
-}
+}  
 
 const styles = StyleSheet.create({
   container: {
@@ -71,4 +129,16 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     padding: 10,
   },
+  scanResult: {
+    marginTop: 10,
+    fontStyle: 'italic',
+  },
+  cancelOverlay: {
+    position: 'absolute',
+    bottom: 60,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
 });
+
