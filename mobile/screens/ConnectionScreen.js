@@ -11,15 +11,15 @@ export default function ConnectionScreen({ setServerAddress, setConnectionStatus
   const [hasScanned, setHasScanned] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
 
-  const handlePing = async () => {
+  const handlePing = async (targetAddress) => {
     try {
-      let url = address.startsWith('http') ? address : `http://${address}`;
+      let url = targetAddress.startsWith('http') ? targetAddress : `http://${targetAddress}`;
       const response = await axios.get(`${url}/ping`);
 
       if (response.status === 200) {
-        setStatus('success');
         setServerAddress(url);
         setConnectionStatus('success');
+        setScannedData(null);
         Alert.alert('Connection Successful', 'Server responded to ping!');
       } else {
         setStatus('fail');
@@ -46,11 +46,12 @@ export default function ConnectionScreen({ setServerAddress, setConnectionStatus
     setHasScanned(true);
     setScannerVisible(false);
     setScannedData(data);
-    setAddress(data);
-  }
+    handlePing(data);
+  };
 
 const handleStartScan = async () => {
   setHasScanned(false);
+  setScannedData(null);
   if (permission?.granted) {
     setScannerVisible(true);
   } else {
@@ -96,16 +97,16 @@ const handleStartScan = async () => {
             placeholder='Server address'
             autoCapitalize='none'
           />
-          <Button title='Connect to server' onPress={handlePing} />
+          <Button title='Connect to server' onPress={() => handlePing(address)} />
           <View style={{ marginTop: 10 }}>
             <Button title='Scan QR code' onPress={handleStartScan} />  
           </View> 
           {scannedData && (
             <Text style={styles.scanResult}>Scanned: {scannedData}</Text>
           )}
-          {status && (
-            <Text style={{ marginTop: 10, color: status === 'success' ? 'green' : 'red' }}>
-              {status === 'success' ? 'Connected' : 'Connection Failed'}
+          {status === 'fail' && (
+            <Text style={{ marginTop: 10, color:'red' }}>
+              Connection Failed
             </Text>
           )}
         </>
