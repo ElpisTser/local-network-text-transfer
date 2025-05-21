@@ -10,8 +10,8 @@ A project consisting of a mobile app (built with Expo) and a Node.js server. The
 - Provides two endpoints:
   - `GET /ping`: check server availability
   - `POST /log`: receive and log text sent from the mobile app
-  - `GET /qr`: returns a QR code containing the server URL for easier mobile connection
 - On startup, logs the local IP address and port the server is running on
+- Displays a QR code containing the server URL in the terminal for easy scanning and connection
 
 ---
 
@@ -24,7 +24,7 @@ A project consisting of a mobile app (built with Expo) and a Node.js server. The
 ### Screens
 
 - **Connection Screen**
-  - Enter the server URL manually or scan the QR code provided by the server
+  - Enter the server URL manually or scan the QR code displayed in the server terminal
   - Performs a `GET /ping` request to verify connectivity
   - Displays connection status and navigates to the next screen upon success
 - **Text Transfer Screen**
@@ -44,8 +44,8 @@ npm install
 npm run start
 ```
 
-- Copy the server URL (e.g. `http://192.168.1.42:3000`) from the terminal logs
-- You can also visit /qr in a browser to display the QR code for scanning
+- The server URL (e.g. `http://192.168.1.42:3000`) and its QR code will be displayed in the terminal
+- Scan the QR code or manually input the URL on the mobile app to connect
 
 ### 2. Start the mobile app
 
