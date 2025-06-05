@@ -2,6 +2,7 @@ import express from 'express';
 import { getLocalIPAddress } from './utils/getLocalIP.js';
 import 'dotenv/config';
 import qrcode from 'qrcode-terminal';
+import bonjour from 'bonjour';
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -33,3 +34,22 @@ app.listen(PORT, () => {
   qrcode.generate(serverUrl, {small: true});
   console.log('Manually input the server address or scan the QR code above to connect');
 });
+
+const bonjourInstance = bonjour();
+const bonjourService =  bonjourInstance.publish({
+  name: 'Bonjour Broadcast',
+  type: 'http',
+  port: PORT,
+  txt: {
+    serverAddress: serverUrl
+  }
+});
+
+bonjourService.on('up', () => {
+  console.log(`Server is being broadcasted on the local network as ${bonjourService.name}`);
+});
+
+bonjourService.on('error', (err) => {
+  console.log('Bonjour error:', err)
+});
+

@@ -9,7 +9,10 @@ export default function App() {
   return (
     <>
       {connectionStatus === 'success' ? (
-        <TextTransferScreen serverAddress={serverAddress} />
+        <TextTransferScreen 
+          serverAddress={serverAddress} 
+          setConnectionStatus={setConnectionStatus}  
+        />
       ) : (
         <ConnectionScreen
           setServerAddress={setServerAddress}
