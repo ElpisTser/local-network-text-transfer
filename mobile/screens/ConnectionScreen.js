@@ -1,33 +1,95 @@
-import React, { useState } from 'react';
-import { View, TextInput, Button, Text, StyleSheet, Alert } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, TextInput, Button, Text, StyleSheet, Alert, ActivityIndicator, Keyboard } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import axios from 'axios';
+import Zeroconf from 'react-native-zeroconf';
 
 export default function ConnectionScreen({ setServerAddress, setConnectionStatus }) {
   const [address, setAddress] = useState('');
-  const [status, setStatus] = useState(null);
+  const [status, setStatus] = useState('idle');
   const [scannerVisible, setScannerVisible] = useState(false);
-  const [scannedData, setScannedData] = useState(null);
   const [hasScanned, setHasScanned] = useState(false);
+  const [zeroconfScanning, setZeroconfScanning] = useState(false);
+  const [abortController, setAbortController] = useState(null);
+
   const [permission, requestPermission] = useCameraPermissions();
 
-  const handlePing = async (targetAddress) => {
-    try {
-      let url = targetAddress.startsWith('http') ? targetAddress : `http://${targetAddress}`;
-      const response = await axios.get(`${url}/ping`);
+  const zeroconf = useMemo(() => new Zeroconf(), []);
 
+  useEffect(() => {
+    zeroconf.on('start', () => {
+      console.log('Zeroconf started scanning');
+    });
+
+    zeroconf.on('stop', () => {
+      console.log('Zeroconf stopped scanning');
+    });
+
+    zeroconf.on('resolved', async (service) => {
+      console.log('Service discovered:', service.name);
+      if (service.name === 'Bonjour Broadcast') {
+        console.log('Found our server');
+        handlePing(service.txt.serverAddress);  
+      }
+    });
+
+    zeroconf.on('error', (error) => {
+      console.log('Zeroconf error:', error);
+    });
+
+    return () => {
+      console.log('Cleaning up zeroconf');
+      zeroconf.stop();
+      zeroconf.removeDeviceListeners();
+    }
+  }, []);
+
+  const startZeroconfScan = () => {
+    zeroconf.scan('http', 'tcp', 'local');
+    setZeroconfScanning(true);
+  }
+
+  const stopZeroConfScan = () => {
+    zeroconf.stop();
+    setZeroconfScanning(false);
+  }
+
+  const handlePing = async (targetAddress) => {
+    const controller = new AbortController();
+    setAbortController(controller);
+    
+    try {
+
+      Keyboard.dismiss();
+
+      setStatus('pending');
+      
+      setZeroconfScanning(false);
+
+      let url = targetAddress.startsWith('http') ? targetAddress : `http://${targetAddress}`;
+      
+      const response = await axios.get(`${url}/ping`, {
+        timeout: 10000,
+        signal: controller.signal
+      });
+      
       if (response.status === 200) {
         setServerAddress(url);
         setConnectionStatus('success');
-        setScannedData(null);
         Alert.alert('Connection Successful', 'Server responded to ping!');
       } else {
         setStatus('fail');
+        setAddress('');
         Alert.alert('Unexpected Response', `Status: ${response.status}`);
       }
     } catch (error) {
-      setStatus('fail');
+      if (axios.isCancel(error) || error.name === 'AbortError') {
+        console.log('Request was cancelled');
+        return;
+      }
 
+      setStatus('fail');
+      setAddress('');
       if (error.response) {
         Alert.alert(
           'Connection Failed',
@@ -38,20 +100,28 @@ export default function ConnectionScreen({ setServerAddress, setConnectionStatus
       } else {
         Alert.alert('Connection Failed', 'Could not send request.');
       }
+    } finally {
+      setAbortController(null);
     }
   };
+
+  const handleCancelRequest = () => {
+    if (abortController) {
+      console.log('Aborting Request');
+      abortController.abort();
+    }
+    setStatus('idle');
+  }
 
   const handleScan = ({ data }) => {
     if (hasScanned) return;
     setHasScanned(true);
     setScannerVisible(false);
-    setScannedData(data);
     handlePing(data);
   };
 
 const handleStartScan = async () => {
   setHasScanned(false);
-  setScannedData(null);
   if (permission?.granted) {
     setScannerVisible(true);
   } else {
@@ -68,6 +138,22 @@ const handleStartScan = async () => {
     }
   }
 };
+
+if (status === 'pending') {
+  return (
+    <View style={styles.container}>
+      <ActivityIndicator size="large" />
+      <Text style={styles.statusText}>
+        Connecting to server
+      </Text>
+      <Button 
+        title="Cancel" 
+        onPress={handleCancelRequest} 
+        color="gray"
+      />
+    </View>
+  );
+}
 
   return (
     <View style={styles.container}>
@@ -97,17 +183,28 @@ const handleStartScan = async () => {
             placeholder='Server address'
             autoCapitalize='none'
           />
-          <Button title='Connect to server' onPress={() => handlePing(address)} />
+          <Button 
+            title='Connect to server' 
+            onPress={() => handlePing(address)} 
+          />
           <View style={{ marginTop: 10 }}>
-            <Button title='Scan QR code' onPress={handleStartScan} />  
+            <Button 
+              title='Scan QR code' 
+              onPress={handleStartScan} 
+            />  
           </View> 
-          {scannedData && (
-            <Text style={styles.scanResult}>Scanned: {scannedData}</Text>
-          )}
-          {status === 'fail' && (
-            <Text style={{ marginTop: 10, color:'red' }}>
-              Connection Failed
-            </Text>
+          {zeroconfScanning ? (
+              <View style={{ marginTop: 10}}>
+                <Button 
+                  title='Stop scanning for local server' 
+                  onPress={stopZeroConfScan} 
+                  color='red'
+                />
+              </View>
+          ) : (
+              <View style={{ marginTop: 10}}>
+                <Button title='Scan for local server' onPress={startZeroconfScan} />
+              </View> 
           )}
         </>
       )}
@@ -140,6 +237,12 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     alignItems: 'center',
+  },
+  statusText: {
+    marginTop: 20,
+    marginBottom: 15,
+    textAlign: 'center',
+    fontSize: 16,
   },
 });
 
