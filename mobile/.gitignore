@@ -38,3 +38,7 @@ yarn-error.*
 
 # Local config
 config.js
+
+push-notifications-bc70e-firebase-adminsdk-fbsvc-ea3ff6bae6.json
+
+google-services.json

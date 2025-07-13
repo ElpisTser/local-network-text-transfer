@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Ping Devices</title>
+</head>
+<body>
+  <h1>Connected Devices</h1>
+
+  <% if (devices.length === 0) { %>
+    <p>No devices connected.</p>
+  <% } else { %>
+    <ul>
+      <% devices.forEach(device => { %>
+        <li>
+          <strong><%= device.deviceName %></strong>
+          <form action="/notify/<%= device.token %>" method="POST" style="display:inline;">
+            <button type="submit">Send Notification</button>
+          </form>
+        </li>
+      <% }); %> 
+    </ul>
+  <% } %>
+</body>
+</html>

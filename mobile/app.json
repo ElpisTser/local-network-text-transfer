@@ -25,9 +25,11 @@
         "android.permission.ACCESS_WIFI_STATE",
         "android.permission.ACCESS_NETWORK_STATE",
         "android.permission.CHANGE_WIFI_MULTICAST_STATE",
-        "android.permission.INTERNET"
+        "android.permission.INTERNET",
+        "VIBRATE"
       ],
-      "package": "com.elpistser.mobile"
+      "package": "com.elpistser.mobile",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -44,6 +46,13 @@
           "android": {
             "usesCleartextTraffic": true
           }
+        }
+      ],
+      [
+        "expo-notifications",
+        { 
+          "color": "#ffffff",
+          "sounds": ["./assets/sounds/alert.wav"]
         }
       ]
     ]     
