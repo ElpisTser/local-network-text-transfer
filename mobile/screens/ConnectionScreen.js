@@ -3,8 +3,9 @@ import { View, TextInput, Button, Text, StyleSheet, Alert, ActivityIndicator, Ke
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import axios from 'axios';
 import Zeroconf from 'react-native-zeroconf';
+import * as Device from 'expo-device';
 
-export default function ConnectionScreen({ setServerAddress, setConnectionStatus }) {
+export default function ConnectionScreen({ setServerAddress, setConnectionStatus, expoPushToken }) {
   const [address, setAddress] = useState('');
   const [status, setStatus] = useState('idle');
   const [scannerVisible, setScannerVisible] = useState(false);
@@ -17,6 +18,8 @@ export default function ConnectionScreen({ setServerAddress, setConnectionStatus
   const zeroconf = useMemo(() => new Zeroconf(), []);
 
   useEffect(() => {
+    if (!expoPushToken) return;
+
     zeroconf.on('start', () => {
       console.log('Zeroconf started scanning');
     });
@@ -42,7 +45,7 @@ export default function ConnectionScreen({ setServerAddress, setConnectionStatus
       zeroconf.stop();
       zeroconf.removeDeviceListeners();
     }
-  }, []);
+  }, [expoPushToken]);
 
   const startZeroconfScan = () => {
     zeroconf.scan('http', 'tcp', 'local');
@@ -57,9 +60,8 @@ export default function ConnectionScreen({ setServerAddress, setConnectionStatus
   const handlePing = async (targetAddress) => {
     const controller = new AbortController();
     setAbortController(controller);
-    
+    console.log('Sending ping with token:', expoPushToken);
     try {
-
       Keyboard.dismiss();
 
       setStatus('pending');
@@ -67,8 +69,13 @@ export default function ConnectionScreen({ setServerAddress, setConnectionStatus
       setZeroconfScanning(false);
 
       let url = targetAddress.startsWith('http') ? targetAddress : `http://${targetAddress}`;
-      
-      const response = await axios.get(`${url}/ping`, {
+
+      const deviceName = Device.deviceName ?? 'Unknown Device';
+
+      const response = await axios.post(`${url}/ping`, {
+        token: expoPushToken,
+        deviceName: deviceName
+      }, {
         timeout: 10000,
         signal: controller.signal
       });
